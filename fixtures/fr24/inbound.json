@@ -1,0 +1,13 @@
+{
+  "data": [
+    {
+      "id": "mock-001",
+      "callsign": "DEMO001",
+      "lat": 0.0,
+      "lon": 0.03,
+      "origin": "AAA",
+      "destination": "XXX",
+      "aircraft": "A321"
+    }
+  ]
+}

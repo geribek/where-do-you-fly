@@ -1,0 +1,31 @@
+{
+  "data": [
+    {
+      "id": "near",
+      "callsign": "DEMO001",
+      "lat": 0.0,
+      "lon": 0.03,
+      "origin": "AAA",
+      "destination": "CCC",
+      "aircraft": "A321"
+    },
+    {
+      "id": "out",
+      "callsign": "DEMO001",
+      "lat": 0.0,
+      "lon": 0.03,
+      "origin": "XXX",
+      "destination": "BBB",
+      "aircraft": "A321"
+    },
+    {
+      "id": "mock-001",
+      "callsign": "DEMO001",
+      "lat": 0.0,
+      "lon": 0.03,
+      "origin": "AAA",
+      "destination": "XXX",
+      "aircraft": "A321"
+    }
+  ]
+}
