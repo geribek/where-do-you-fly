@@ -40,6 +40,7 @@ class Settings:
     environment: str = "mock"
     result_limit: int = 1
     web_origin: str = ""
+    allow_container_proxy: bool = False
 
     @property
     def runtime_db(self):
@@ -70,9 +71,11 @@ class Settings:
             raise ValueError("result limit must be between 1 and 10")
         if self.web_origin:
             origin = urlsplit(self.web_origin)
-            if (origin.scheme != "https" or not origin.hostname or not origin.hostname.endswith(".ts.net")
-                    or origin.username or origin.password or origin.path or origin.query or origin.fragment):
-                raise ValueError("Web origin must be an exact Tailscale HTTPS origin")
+            tailnet = origin.scheme == "https" and origin.hostname and origin.hostname.endswith(".ts.net")
+            local = origin.scheme == "http" and origin.hostname in {"localhost", "127.0.0.1"}
+            if (not (tailnet or local) or origin.username or origin.password or origin.path
+                    or origin.query or origin.fragment):
+                raise ValueError("Web origin must be an exact local or Tailscale origin")
 
     @classmethod
     def load(cls, env_file=None, environ=None):
@@ -108,6 +111,7 @@ class Settings:
                        environment=environment,
                        result_limit=int(values.get("FR24_RESULT_LIMIT", "1")),
                        web_origin=values.get("FLIGHT_WEB_ORIGIN", ""),
+                       allow_container_proxy=values.get("FLIGHT_ALLOW_CONTAINER_PROXY", "false").lower() == "true",
                        scenario=values.get("MOCK_SCENARIO","inbound"),
                        db=values.get("FLIGHT_DB",".private/flight-display.sqlite3"),
                        api_key=values.get(token_name, "") or "")

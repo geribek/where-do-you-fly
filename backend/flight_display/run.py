@@ -19,7 +19,10 @@ def main():
     except (ValueError, OSError):
         parser.exit(2, "Cannot start: check the selected environment token, private file permissions and settings.\n")
     print(f"Starting {settings.environment} calibration on localhost:{args.port}")
-    uvicorn.run("flight_display.calibration:create_app", factory=True, host="127.0.0.1",
+    host = os.getenv("APP_HOST", "127.0.0.1")
+    if host not in {"127.0.0.1", "0.0.0.0"}:
+        parser.exit(2, "Cannot start: APP_HOST must be 127.0.0.1 or 0.0.0.0.\n")
+    uvicorn.run("flight_display.calibration:create_app", factory=True, host=host,
                 port=args.port, access_log=False, proxy_headers=False)
 
 if __name__ == "__main__":

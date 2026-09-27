@@ -33,6 +33,6 @@ Outside configured active windows the API returns `sleep`. There is no schedule-
 - [Security policy](SECURITY.md)
 - [Local balcony calibration helper](docs/calibration.md)
 - [Switching environments](docs/environments.md) — private tokens, startup commands and spending limits.
-- [Raspberry Pi deployment](docs/pi-deployment.md) — GHCR pull timer, configurable Tailscale hostname and rollback.
+- [Raspberry Pi deployment](docs/pi-deployment.md) — Compose image updates and configurable Tailscale access.
 
 No e-paper driver, power circuit or enclosure is included. The renderer is a smoke preview. Private delivery tracking is configured locally, outside public source.

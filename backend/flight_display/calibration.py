@@ -95,7 +95,8 @@ def create_app(env_file=None):
         same_origin = not origin or origin == expected_origin
         allowed_host = via_serve or host in {"localhost","127.0.0.1","::1"}
         # Trust only the local Serve proxy, never a forwarded-IP/identity header.
-        if not local or not allowed_host or not same_origin or request.headers.get("sec-fetch-site") == "cross-site":
+        peer_allowed = local or (settings.allow_container_proxy and via_serve)
+        if not peer_allowed or not allowed_host or not same_origin or request.headers.get("sec-fetch-site") == "cross-site":
             response=JSONResponse({"detail":"Local same-origin access required"},status_code=403)
         elif request.method == "POST" and not hmac.compare_digest(request.headers.get("x-calibration-token",""),token):
             response=JSONResponse({"detail":"Invalid session token"},status_code=403)

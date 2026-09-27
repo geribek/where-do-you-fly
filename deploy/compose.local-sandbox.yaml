@@ -1,0 +1,58 @@
+services:
+  config-init:
+    image: ${FLIGHT_IMAGE:?Set FLIGHT_IMAGE to the published sandbox image}
+    platform: linux/arm64
+    user: 0:0
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        install -m 600 -o 10001 -g 10001 /source/.env /config/.env &&
+        chown 10001:10001 /data &&
+        chmod 700 /data
+    volumes:
+      - type: bind
+        source: ${FLIGHT_ENV_FILE_HOST:-../.env}
+        target: /source/.env
+        read_only: true
+        bind:
+          create_host_path: false
+      - flight-sandbox-config:/config
+      - flight-sandbox-data:/data
+
+  flight:
+    image: ${FLIGHT_IMAGE:?Set FLIGHT_IMAGE to the published sandbox image}
+    platform: linux/arm64
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 256m
+    pids_limit: 100
+    depends_on:
+      config-init:
+        condition: service_completed_successfully
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    environment:
+      FLIGHT_ENV: sandbox
+      FLIGHT_ENV_FILE: /config/.env
+      FLIGHT_DB: /data/flights.sqlite3
+      FLIGHT_WEB_ORIGIN: http://localhost:8001
+      FLIGHT_ALLOW_CONTAINER_PROXY: "true"
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8001
+    ports:
+      - 127.0.0.1:8001:8001
+    volumes:
+      - flight-sandbox-config:/config:ro
+      - flight-sandbox-data:/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+volumes:
+  flight-sandbox-config:
+  flight-sandbox-data:
