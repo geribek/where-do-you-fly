@@ -43,6 +43,11 @@ class CalibrationTests(unittest.TestCase):
     def test_remote_client_and_host_blocked(self):
         for host,client in [('http://localhost',('192.0.2.1',123)),('http://example.com',('127.0.0.1',123))]:
             with TestClient(create_app(self.path),base_url=host,client=client) as c:self.assertEqual(c.get('/api/config').status_code,403)
+    def test_explicit_container_proxy_allows_configured_local_origin(self):
+        self.path.write_text(self.path.read_text()+"FLIGHT_WEB_ORIGIN=http://localhost:8001\nFLIGHT_ALLOW_CONTAINER_PROXY=true\n")
+        with TestClient(create_app(self.path),base_url='http://localhost:8001',client=('172.18.0.2',123)) as client:
+            self.assertEqual(client.get('/api/config').status_code,200)
+            self.assertEqual(client.get('/api/config',headers={'host':'127.0.0.1:8001'}).status_code,403)
     def test_cross_origin_and_missing_token_cannot_write(self):
         before=self.path.read_bytes()
         self.assertEqual(self.client.post('/api/config',json=self.payload()).status_code,403)

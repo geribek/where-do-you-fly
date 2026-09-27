@@ -10,7 +10,8 @@ services:
     security_opt: [no-new-privileges:true]
     mem_limit: 256m
     pids_limit: 100
-    tmpfs: [/tmp:size=16m,mode=1777]
+    tmpfs:
+      - /tmp:size=16m,mode=1777
     environment:
       FLIGHT_ENV: ${FLIGHT_CHANNEL:?Set sandbox or prod}
       FLIGHT_ENV_FILE: /config/.env

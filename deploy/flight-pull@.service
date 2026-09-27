@@ -6,6 +6,7 @@ Requires=docker.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/python3 /opt/where-do-you-fly/deploy/pull.py /etc/where-do-you-fly/%i.json
+EnvironmentFile=/etc/where-do-you-fly/%i.compose.env
+ExecStart=/usr/bin/docker compose --project-name flight-%i --env-file /etc/where-do-you-fly/%i.compose.env -f /opt/where-do-you-fly/deploy/compose.yaml up -d --pull always --wait --wait-timeout 90
 UMask=0077
 TimeoutStartSec=20min
