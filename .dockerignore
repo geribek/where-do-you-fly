@@ -1,0 +1,13 @@
+**
+!Dockerfile
+!requirements.txt
+!backend/
+!backend/flight_display/
+!backend/flight_display/*.py
+!calibration/
+!calibration/*.html
+!calibration/*.css
+!calibration/*.mjs
+!fixtures/
+!fixtures/fr24/
+!fixtures/fr24/*.json

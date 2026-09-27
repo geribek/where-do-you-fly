@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 import math
 import os
 import re
+from urllib.parse import urlsplit
 from dotenv import dotenv_values
 
 def windows(value):
@@ -38,6 +39,7 @@ class Settings:
     api_key: str = field(default="", repr=False)
     environment: str = "mock"
     result_limit: int = 1
+    web_origin: str = ""
 
     @property
     def runtime_db(self):
@@ -66,6 +68,11 @@ class Settings:
             raise ValueError("selected environment requires its own FR24 token")
         if not 1 <= self.result_limit <= 10:
             raise ValueError("result limit must be between 1 and 10")
+        if self.web_origin:
+            origin = urlsplit(self.web_origin)
+            if (origin.scheme != "https" or not origin.hostname or not origin.hostname.endswith(".ts.net")
+                    or origin.username or origin.password or origin.path or origin.query or origin.fragment):
+                raise ValueError("Web origin must be an exact Tailscale HTTPS origin")
 
     @classmethod
     def load(cls, env_file=None, environ=None):
@@ -100,6 +107,7 @@ class Settings:
                        provider="mock" if environment == "mock" else "fr24",
                        environment=environment,
                        result_limit=int(values.get("FR24_RESULT_LIMIT", "1")),
+                       web_origin=values.get("FLIGHT_WEB_ORIGIN", ""),
                        scenario=values.get("MOCK_SCENARIO","inbound"),
                        db=values.get("FLIGHT_DB",".private/flight-display.sqlite3"),
                        api_key=values.get(token_name, "") or "")

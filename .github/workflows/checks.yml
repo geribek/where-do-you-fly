@@ -47,3 +47,29 @@ jobs:
         with:
           node-version: '22'
       - run: node --test calibration/tests/*.test.mjs
+  deployment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: python3 -m unittest discover -s deploy/tests -v
+      - run: docker build -t flight-test .
+      - name: Container health and Compose validation
+        run: |
+          mkdir -p /tmp/flight-smoke
+          printf 'FLIGHT_ENV=mock\n' > /tmp/flight-smoke/.env
+          sudo chown -R 10001:10001 /tmp/flight-smoke
+          sudo chmod 600 /tmp/flight-smoke/.env
+          docker run -d --name flight-test --network host -e FLIGHT_ENV_FILE=/config/.env -v /tmp/flight-smoke:/config flight-test
+          for attempt in $(seq 1 30); do
+            status=$(docker inspect -f '{{.State.Health.Status}}' flight-test)
+            if [ "$status" = healthy ]; then
+              FLIGHT_IMAGE=flight-test FLIGHT_CHANNEL=sandbox APP_PORT=8001 CONFIG_DIR=/tmp/flight-smoke DATA_DIR=/tmp/flight-data docker compose -f deploy/compose.yaml config --quiet
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
+      - if: always()
+        run: docker rm -f flight-test || true

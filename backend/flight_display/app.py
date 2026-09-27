@@ -9,6 +9,8 @@ def create_app(service=None):
         settings = Settings.load()
         service = Service(settings.runtime_db, make_provider(settings), settings=settings)
     app = FastAPI(title="Flight Display POC", version="0.1.0")
+    @app.get("/healthz")
+    def health(): return {"status":"ok"}
     @app.get("/api/v1/display", response_model=Display)
     def display():
         return service.get()

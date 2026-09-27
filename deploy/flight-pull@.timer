@@ -1,0 +1,11 @@
+[Unit]
+Description=Check Flight Display %i release every five minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitInactiveSec=5min
+RandomizedDelaySec=30s
+Unit=flight-pull@%i.service
+
+[Install]
+WantedBy=timers.target
