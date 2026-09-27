@@ -11,8 +11,9 @@ from flight_display.calibration import create_app
 class CalibrationTests(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.path=Path(self.tmp.name)/".env"
-        self.secret="unit"+"-test-not-a-real-key"
-        self.path.write_text("# preserve this comment\nFLIGHT_PROFILE=demo\nFLIGHT_AIRPORT=XXX\nFR24_API_KEY"+"="+self.secret+"\nFLIGHT_WEEKDAY_WINDOWS=09:00-17:00\n")
+        # Public synthetic marker: never load real credentials into this fixture.
+        self.fixture_marker="unit-test-not-a-real-key"
+        self.path.write_text("# preserve this comment\nFLIGHT_PROFILE=demo\nFLIGHT_AIRPORT=XXX\nFR24_API_KEY"+"="+self.fixture_marker+"\nFLIGHT_WEEKDAY_WINDOWS=09:00-17:00\n")
         self.path.chmod(0o600)
         self.environment=patch.dict(os.environ,{},clear=True);self.environment.start()
         self.client=TestClient(create_app(self.path),base_url="http://localhost",client=("127.0.0.1",50000))
@@ -22,18 +23,18 @@ class CalibrationTests(unittest.TestCase):
     def save(self,payload=None,**kwargs):return self.client.post('/api/config',json=payload or self.payload(),headers={"x-calibration-token":self.state['token']},**kwargs)
     def test_config_only_exposes_allowed_fields_and_no_secrets(self):
         self.assertEqual(set(self.state),{'latitude','longitude','airport','radius_km','revision','token','mode','environment_overrides'})
-        self.assertNotIn(self.secret,json.dumps(self.state))
+        self.assertNotIn(self.fixture_marker,json.dumps(self.state))
         self.assertEqual(self.state['mode'],'mock')
     def test_snapshot_requires_same_origin_session_token(self):
         self.assertEqual(self.client.post('/api/snapshot',json={}).status_code,403)
         response=self.client.post('/api/snapshot',json={},headers={'x-calibration-token':self.state['token']})
         self.assertEqual(response.status_code,200)
         self.assertEqual(response.json()['mode'],'mock')
-        self.assertNotIn(self.secret,response.text)
+        self.assertNotIn(self.fixture_marker,response.text)
     def test_private_save_preserves_other_settings_and_permissions(self):
         result=self.save();self.assertEqual(result.status_code,200)
         data=dotenv_values(self.path)
-        self.assertEqual(data['FR24_API_KEY'],self.secret)
+        self.assertEqual(data['FR24_API_KEY'],self.fixture_marker)
         self.assertEqual(data['FLIGHT_WEEKDAY_WINDOWS'],'09:00-17:00')
         self.assertEqual(data['FLIGHT_AIRPORT'],'ZZZ')
         self.assertEqual(data['FLIGHT_RADIUS_KM'],'8.5')
