@@ -1,6 +1,6 @@
 # Flight Display POC
 
-A mock-only, hardware-independent foundation for an ESP32-S3 flight display. Eventual output: 800×480 white/black/red/yellow e-paper. No hardware purchase or live provider is needed.
+A hardware-independent foundation for an ESP32-S3 flight display, with mock, FR24 sandbox and opt-in production environments. Eventual output: 800×480 white/black/red/yellow e-paper. No hardware purchase is needed.
 
 ## Set up
 
@@ -31,5 +31,7 @@ Outside configured active windows the API returns `sleep`. There is no schedule-
 - [API contract](docs/api-contract.md)
 - [Firmware/Wokwi tests](firmware/test/README.md)
 - [Security policy](SECURITY.md)
+- [Local balcony calibration helper](docs/calibration.md)
+- [Switching environments](docs/environments.md) — private tokens, startup commands and spending limits.
 
-No live provider, e-paper driver, power circuit or enclosure is included. The renderer is a smoke preview. Private delivery tracking is configured locally, outside public source.
+No e-paper driver, power circuit or enclosure is included. The renderer is a smoke preview. Private delivery tracking is configured locally, outside public source.
