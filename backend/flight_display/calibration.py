@@ -10,6 +10,7 @@ import tempfile
 import threading
 import json
 from datetime import datetime
+from urllib.parse import urlsplit
 from dotenv import set_key
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -88,8 +89,13 @@ def create_app(env_file=None):
         except (ValueError,AttributeError): local = False
         host = request.url.hostname
         origin = request.headers.get("origin")
-        same_origin = not origin or origin == f"{request.url.scheme}://{request.url.netloc}"
-        if not local or host not in {"localhost","127.0.0.1","::1"} or not same_origin or request.headers.get("sec-fetch-site") == "cross-site":
+        proxy_host = urlsplit(settings.web_origin).netloc if settings.web_origin else None
+        via_serve = bool(proxy_host and request.headers.get("host") == proxy_host)
+        expected_origin = settings.web_origin if via_serve else f"{request.url.scheme}://{request.url.netloc}"
+        same_origin = not origin or origin == expected_origin
+        allowed_host = via_serve or host in {"localhost","127.0.0.1","::1"}
+        # Trust only the local Serve proxy, never a forwarded-IP/identity header.
+        if not local or not allowed_host or not same_origin or request.headers.get("sec-fetch-site") == "cross-site":
             response=JSONResponse({"detail":"Local same-origin access required"},status_code=403)
         elif request.method == "POST" and not hmac.compare_digest(request.headers.get("x-calibration-token",""),token):
             response=JSONResponse({"detail":"Invalid session token"},status_code=403)
@@ -108,6 +114,9 @@ def create_app(env_file=None):
 
     @app.get("/")
     def index(): return FileResponse(WEB/"index.html")
+
+    @app.get("/healthz")
+    def health(): return {"status":"ok"}
 
     @app.get("/assets/{name}")
     def asset(name: str):

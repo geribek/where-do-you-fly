@@ -8,7 +8,7 @@ def main():
     parser = argparse.ArgumentParser(description="Start local flight calibration")
     parser.add_argument("--env", choices=["mock", "sandbox", "prod"])
     parser.add_argument("--env-file", help="Private dotenv file; defaults to FLIGHT_ENV_FILE or .env")
-    parser.add_argument("--port", type=int, default=8001)
+    parser.add_argument("--port", type=int, default=int(os.getenv("APP_PORT", "8001")))
     args = parser.parse_args()
     if args.env:
         os.environ["FLIGHT_ENV"] = args.env

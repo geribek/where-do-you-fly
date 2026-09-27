@@ -1,0 +1,27 @@
+services:
+  flight:
+    image: ${FLIGHT_IMAGE:?Set immutable image digest}
+    # Linux host networking keeps the HTTP socket genuinely loopback-only.
+    network_mode: host
+    restart: unless-stopped
+    user: "10001:10001"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 256m
+    pids_limit: 100
+    tmpfs: [/tmp:size=16m,mode=1777]
+    environment:
+      FLIGHT_ENV: ${FLIGHT_CHANNEL:?Set sandbox or prod}
+      FLIGHT_ENV_FILE: /config/.env
+      FLIGHT_DB: /data/flights.sqlite3
+      APP_PORT: ${APP_PORT:?Set local port}
+    volumes:
+      # Mount the directory, since calibration saves replace .env atomically.
+      - ${CONFIG_DIR:?Set private config directory}:/config
+      - ${DATA_DIR:?Set persistent data directory}:/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
