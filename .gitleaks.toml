@@ -5,5 +5,5 @@ useDefault = true
 [[rules]]
 id = "fr24-credential-assignment"
 description = "Nonempty provider key assignment"
-regex = '''(?i)(?:FR24_API_KEY|fr24[_-]?(?:api[_-]?)?(?:key|token))\s*[=:]\s*[\"']?([A-Za-z0-9_./+=-]{12,})'''
+regex = '''(?i)(?:FR24_(?:API_KEY|SANDBOX_TOKEN|PROD_TOKEN)|fr24[_-]?(?:api[_-]?)?(?:key|token))[ \t]*[=:][ \t]*[\"']?([A-Za-z0-9_|./+=-]{12,})'''
 secretGroup = 1

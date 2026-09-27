@@ -4,7 +4,7 @@ All checked-in fixtures, example settings and CI data are synthetic. The demo us
 
 ## Local development
 
-Copy `.env.example` to `.env` for a new setup and immediately run `chmod 600 .env`. The backend reads this exact file from the repository working directory; set `FLIGHT_ENV_FILE` to use another path. Process environment variables override the file. Personal profiles require complete settings and invalid configuration errors never echo values. `FR24_API_KEY` is reserved for a future backend-only adapter; no key is needed now and live mode still fails closed.
+Copy `.env.example` to `.env` for a new setup and immediately run `chmod 600 .env`. The backend reads this exact file from the repository working directory; set `FLIGHT_ENV_FILE` to use another path. Process environment variables override the file. Personal profiles require complete settings and invalid configuration errors never echo values. `FR24_SANDBOX_TOKEN` and `FR24_PROD_TOKEN` are separate backend-only credentials selected by `FLIGHT_ENV`; missing credentials fail closed. Mock requires neither. See [environment setup](docs/environments.md).
 
 An env file is plaintext, not encrypted. Owner-only permissions and Git exclusion prevent accidental sharing; they do not defend against a compromised account or device. Use OS disk encryption and, when required, a secret manager. If the repository lives in a cloud-synced folder, `.env` and `.private` may sync too: Git ignore does not prevent cloud sync. Put credentials in an owner-readable file outside the synced tree and point `FLIGHT_ENV_FILE` there, or inject them from the runtime secret manager. Never paste credentials into chat, Jira, issues, command arguments or logs.
 
@@ -16,7 +16,7 @@ GitHub Actions **secrets** are appropriate for credentials or sensitive deployme
 
 GitHub secrets are not automatically available to the running backend. A future deployment must inject them securely into the hosting platform's runtime secret store/environment. Prefer a hosting secret manager and short-lived deployment identity via OIDC. Keep the FR24 key exclusively on the backend, never in firmware, a browser bundle, build flags or downloadable artifacts. Private Wi-Fi credentials compiled into firmware remain recoverable from the binary; never publish personalized firmware. Secure provisioning is a later physical-device gate.
 
-No real keys have been provisioned. No GitHub secrets, branch rules or remote security settings were changed by this local hardening. The current remote was verified to have secret scanning and push protection enabled. Before publishing to another remote, verify those protections again. Require the `security` CI check where branch rules permit after it has first run. Provider-specific scanners do not reliably detect location or arbitrary proprietary tokens; local privacy checks complement them.
+Credentials may be provisioned only in ignored local configuration or a runtime secret store. No GitHub secrets, branch rules or remote security settings are changed by local environment setup. The current remote was verified to have secret scanning and push protection enabled during initial hardening. Before publishing to another remote, verify those protections again. Require the `security` CI check where branch rules permit after it has first run. Provider-specific scanners do not reliably detect location or arbitrary proprietary tokens; local privacy checks complement them.
 
 ## Before the first commit and on every clone
 
