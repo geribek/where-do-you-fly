@@ -37,3 +37,13 @@ jobs:
           python-version: '3.12'
       - run: pip install platformio==6.2.0
       - run: pio run -d firmware -e esp32-s3
+  calibration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test calibration/tests/*.test.mjs
