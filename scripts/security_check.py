@@ -22,7 +22,7 @@ def private_values(root):
         for line in path.read_text().splitlines():
             if "=" not in line or line.lstrip().startswith("#"):continue
             key,value=line.split("=",1)
-            if key.strip() in {"FR24_API_KEY","FLIGHT_CENTER_LAT","FLIGHT_CENTER_LON","FLIGHT_AIRPORT","FLIGHT_TIMEZONE"}:
+            if key.strip() in {"FR24_API_KEY","FR24_SANDBOX_TOKEN","FR24_PROD_TOKEN","FLIGHT_CENTER_LAT","FLIGHT_CENTER_LON","FLIGHT_AIRPORT","FLIGHT_TIMEZONE"}:
                 value=value.strip().strip("\"'")
                 if value and value not in {"0","0.0","XXX","UTC"}:values.append(value)
     return [v for v in values if isinstance(v,str) and len(v)>=3]

@@ -36,6 +36,13 @@ class Settings:
     scenario: str = "inbound"
     db: str = ".private/flight-display.sqlite3"
     api_key: str = field(default="", repr=False)
+    environment: str = "mock"
+    result_limit: int = 1
+
+    @property
+    def runtime_db(self):
+        # Keep the original mock database; never mix production spend with test data.
+        return self.db if self.environment == "mock" else self.db + "." + self.environment
 
     def __repr__(self):
         return "Settings(<redacted>)"
@@ -51,8 +58,14 @@ class Settings:
                 if not (spans and all(0 <= a < b <= 1440 and a%5==0 and b%5==0 for a,b in spans)): raise ValueError()
         except Exception:
             raise ValueError("invalid private deployment configuration") from None
-        if self.provider != "mock":
-            raise RuntimeError("Live provider is intentionally unavailable in this phase")
+        if self.environment not in {"mock", "sandbox", "prod"}:
+            raise ValueError("invalid flight environment")
+        if self.provider not in {"mock", "fr24"} or (self.provider == "fr24") != (self.environment != "mock"):
+            raise ValueError("provider must match environment")
+        if self.environment != "mock" and not self.api_key.strip():
+            raise ValueError("selected environment requires its own FR24 token")
+        if not 1 <= self.result_limit <= 10:
+            raise ValueError("result limit must be between 1 and 10")
 
     @classmethod
     def load(cls, env_file=None, environ=None):
@@ -64,6 +77,13 @@ class Settings:
                 raise ValueError("private env file must be owner-readable only (chmod 600)")
             values.update(dotenv_values(path, interpolate=False))
         values.update(env)  # Explicit runtime environment overrides local files.
+        if values.get("FLIGHT_PROVIDER", "mock") != "mock" and "FLIGHT_ENV" not in values:
+            raise RuntimeError("Select an explicit FLIGHT_ENV instead of the legacy provider setting")
+        environment = values.get("FLIGHT_ENV", "mock")
+        if environment not in {"mock", "sandbox", "prod"}:
+            raise ValueError("FLIGHT_ENV must be mock, sandbox or prod")
+        # Do not fall back between credentials: a missing token must fail closed.
+        token_name = {"mock":"FR24_API_KEY", "sandbox":"FR24_SANDBOX_TOKEN", "prod":"FR24_PROD_TOKEN"}[environment]
         if values.get("FLIGHT_PROFILE", "demo") not in {"demo","personal"}:
             raise ValueError("invalid configuration profile")
         required=("FLIGHT_CENTER_LAT","FLIGHT_CENTER_LON","FLIGHT_AIRPORT","FLIGHT_TIMEZONE","FLIGHT_WEEKDAY_WINDOWS","FLIGHT_WEEKEND_WINDOWS")
@@ -77,10 +97,12 @@ class Settings:
                        timezone=values.get("FLIGHT_TIMEZONE","UTC"),
                        weekday_windows=windows(values.get("FLIGHT_WEEKDAY_WINDOWS","09:00-17:00")),
                        weekend_windows=windows(values.get("FLIGHT_WEEKEND_WINDOWS","09:00-17:00")),
-                       provider=values.get("FLIGHT_PROVIDER","mock"),
+                       provider="mock" if environment == "mock" else "fr24",
+                       environment=environment,
+                       result_limit=int(values.get("FR24_RESULT_LIMIT", "1")),
                        scenario=values.get("MOCK_SCENARIO","inbound"),
                        db=values.get("FLIGHT_DB",".private/flight-display.sqlite3"),
-                       api_key=values.get("FR24_API_KEY", "") or "")
+                       api_key=values.get(token_name, "") or "")
         except RuntimeError:
             raise
         except Exception:

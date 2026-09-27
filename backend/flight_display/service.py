@@ -29,6 +29,8 @@ class Service:
             CREATE TABLE IF NOT EXISTS ledger(month TEXT PRIMARY KEY, credits INTEGER NOT NULL);
             CREATE TABLE IF NOT EXISTS state(id INTEGER PRIMARY KEY CHECK(id=1), slot INTEGER, payload TEXT);
             CREATE TABLE IF NOT EXISTS metadata(id TEXT PRIMARY KEY, expires REAL, payload TEXT);
+            CREATE TABLE IF NOT EXISTS reservations(at REAL, credits INTEGER);
+            CREATE TABLE IF NOT EXISTS candidates(slot INTEGER PRIMARY KEY, payload TEXT);
             """)
     def connect(self):
         return sqlite3.connect(self.db, timeout=10)
@@ -49,16 +51,24 @@ class Service:
                 return Display.model_validate({**json.loads(row[1]), **base})
             used = c.execute("SELECT credits FROM ledger WHERE month=?",(month,)).fetchone()
             cost = self.provider.max_credits
+            if self.settings.environment == "prod":
+                rolling = c.execute("SELECT COALESCE(SUM(credits),0) FROM reservations WHERE at>?", (now.timestamp()-32*86400,)).fetchone()[0]
+                if rolling + cost > self.cap:
+                    return Display(status="budget", **base)
             if (used[0] if used else 0) + cost > self.cap:
                 return Display(status="budget", **base)
             # Conservative estimate: reserve full maximum, including failed/ambiguous calls.
             c.execute("INSERT INTO ledger VALUES (?,?) ON CONFLICT(month) DO UPDATE SET credits=credits+excluded.credits",(month,cost))
+            c.execute("INSERT INTO reservations VALUES (?,?)", (now.timestamp(), cost))
             result = Display(status="error", **base)
             # Commit reservation before any provider call; crashes never refund uncertain usage.
             c.execute("INSERT OR REPLACE INTO state VALUES (1,?,?)",(slot,result.model_dump_json()))
         try:
             flights = self.provider.fetch()
             with self.connect() as c:
+                c.execute("DELETE FROM candidates WHERE slot<?", (slot-1,))
+                c.execute("INSERT OR REPLACE INTO candidates VALUES (?,?)", (slot,json.dumps([f.model_dump() for f in flights])))
+                c.execute("DELETE FROM metadata WHERE expires<=?", (now.timestamp(),))
                 for f in flights:
                     cached = c.execute("SELECT payload FROM metadata WHERE id=? AND expires>?",(f.id,now.timestamp())).fetchone()
                     if cached:
